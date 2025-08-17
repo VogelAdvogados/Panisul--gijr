@@ -16,6 +16,7 @@ import YAML from "yaml";
 import { ZodError } from "zod";
 import { productsRouter } from "./modules/produtos/routes";
 import { fileURLToPath } from "url";
+import { clientesRouter } from "./modules/clientes/routes";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -45,6 +46,7 @@ app.get("/api/v1/health", (req, res) => {
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/products", productsRouter);
+app.use("/api/v1/clients", clientesRouter);
 app.use("/api/v1/sales", vendasRouter);
 
 // Not found handler
