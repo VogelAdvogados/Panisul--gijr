@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id       String  @id @default(uuid())
+  name     String
+  stockQty Float   @default(0)
+  costAvg  Float   @default(0)
+  // relations
+  stockMoves StockMove[]
+  saleItems  SaleItem[]
+}
+
+model Sale {
+  id          String   @id @default(uuid())
+  createdAt   DateTime @default(now())
+  clientId    String
+  totalValue  Float
+  paymentType PaymentType
+  dueDate     DateTime?
+  // relations
+  items SaleItem[]
+}
+
+model SaleItem {
+  id        String  @id @default(uuid())
+  saleId    String
+  productId String
+  quantity  Float
+  price     Float
+  Sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  Product   Product @relation(fields: [productId], references: [id])
+}
+
+model StockMove {
+  id        String   @id @default(uuid())
+  productId String
+  quantity  Float
+  reason    StockMoveReason
+  createdAt DateTime @default(now())
+  Product   Product  @relation(fields: [productId], references: [id])
+}
+
+enum PaymentType {
+  AVISTA
+  APRAZO
+}
+
+enum StockMoveReason {
+  VENDA
+  PRODUCAO
+  COMPRA
+  TROCA
+}

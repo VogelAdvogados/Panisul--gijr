@@ -1,0 +1,126 @@
+openapi: 3.0.3
+info:
+  title: PaniSul API
+  version: 1.0.0
+  description: API v1 do sistema PaniSul
+servers:
+  - url: /api/v1
+paths:
+  /sales:
+    post:
+      summary: Registrar venda
+      tags: [Vendas]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSaleDTO'
+      responses:
+        '201':
+          description: Venda registrada com sucesso
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Sale'
+        '400':
+          description: Erro de validação
+        '401':
+          description: Não autenticado
+        '403':
+          description: Sem permissão
+        '422':
+          description: Regra de negócio violada (ex. estoque insuficiente)
+        '500':
+          description: Erro interno do servidor
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [ESTOQUE.INSUFICIENTE, VALIDACAO.CAMPO_OBRIGATORIO, AUTH.NAO_AUTORIZADO]
+        message:
+          type: string
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiError'
+        meta:
+          type: object
+          properties:
+            traceId:
+              type: string
+    CreateSaleDTO:
+      type: object
+      required: [clientId, items, paymentType]
+      properties:
+        clientId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleItem'
+          minItems: 1
+        paymentType:
+          type: string
+          enum: [AVISTA, APRAZO]
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+    SaleItem:
+      type: object
+      required: [productId, quantity, price]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+        price:
+          type: number
+          minimum: 0
+    Sale:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        clientId:
+          type: string
+        totalValue:
+          type: number
+        paymentType:
+          type: string
+          enum: [AVISTA, APRAZO]
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
