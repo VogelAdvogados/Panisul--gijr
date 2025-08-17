@@ -1,29 +1,40 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { z } from "zod";
 import { CreateSaleDTO } from "@panisul/contracts/v1/vendas";
-import axios from "axios";
+import { http } from "../../shared/http";
 
 const SaleFormSchema = CreateSaleDTO;
 
  type FormData = z.infer<typeof SaleFormSchema>;
 
+type Product = { id: string; name: string; stockQty: number };
+
 async function ensureToken(): Promise<string> {
 	const key = "panisul_token";
 	const existing = localStorage.getItem(key);
 	if (existing) return existing;
-	const { data } = await axios.get("/api/v1/auth/demo");
+	const { data } = await http.get("/auth/demo");
 	const token = data?.data?.token ?? "";
 	if (token) localStorage.setItem(key, token);
 	return token;
 }
 
 export function SalesPage() {
-const [form, setForm] = useState<FormData>({
+ const [form, setForm] = useState<FormData>({
 		clientId: "",
 		items: [{ productId: "", quantity: 1, price: 0 }],
 		paymentType: "AVISTA"
 	});
 	const [message, setMessage] = useState<string>("");
+	const [products, setProducts] = useState<Product[]>([]);
+
+	useEffect(() => {
+		(async () => {
+			const token = await ensureToken();
+			const { data } = await http.get("/products", { headers: { Authorization: `Bearer ${token}` } });
+			setProducts(data?.data ?? []);
+		})();
+	}, []);
 
 	function updateItem(index: number, key: "productId" | "quantity" | "price", value: string) {
 		setForm((prev) => {
@@ -51,7 +62,7 @@ const [form, setForm] = useState<FormData>({
 		}
 		try {
 			const token = await ensureToken();
-			const res = await axios.post("/api/v1/sales", parsed.data, {
+			const res = await http.post("/sales", parsed.data, {
 				headers: { Authorization: `Bearer ${token}` }
 			});
 			setMessage(res.data.message ?? "Ok");
@@ -73,7 +84,12 @@ const [form, setForm] = useState<FormData>({
 				<div className="space-y-2">
 					{form.items.map((it, idx) => (
 						<div key={idx} className="grid grid-cols-3 gap-2">
-							<input className="border rounded p-2" placeholder="Produto ID" value={it.productId} onChange={(e) => updateItem(idx, "productId", e.target.value)} />
+							<select className="border rounded p-2" value={it.productId} onChange={(e) => updateItem(idx, "productId", e.target.value)}>
+								<option value="">Selecione um produto</option>
+								{products.map((p) => (
+									<option key={p.id} value={p.id}>{p.name} (est: {p.stockQty})</option>
+								))}
+							</select>
 							<input type="number" className="border rounded p-2" placeholder="Qtd" value={it.quantity} onChange={(e) => updateItem(idx, "quantity", e.target.value)} />
 							<input type="number" className="border rounded p-2" placeholder="Preço" value={it.price} onChange={(e) => updateItem(idx, "price", e.target.value)} />
 						</div>
@@ -94,9 +110,3 @@ const [form, setForm] = useState<FormData>({
 		</div>
 	);
 }
-
-// Token somente para demo local (ADMIN). Em produção, obter via login.
-const demoToken = (() => {
-	// header.payload.signature (não valida de verdade sem segredo compartilhado; aqui é mock)
-	return "";
-})();

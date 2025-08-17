@@ -28,6 +28,20 @@ export async function createSale(input: CreateSaleInput) {
 			}
 		});
 
+		await tx.auditLog.create({
+			data: {
+				actorId: "system",
+				action: "SALE_CREATED",
+				entity: "Sale",
+				entityId: sale.id,
+				details: {
+					clientId: input.clientId,
+					totalValue,
+					items: input.items
+				}
+			}
+		});
+
 		for (const item of input.items) {
 			await tx.product.update({
 				where: { id: item.productId },
@@ -51,4 +65,21 @@ export async function createSale(input: CreateSaleInput) {
 			dueDate: sale.dueDate ? sale.dueDate.toISOString() : null
 		};
 	});
+}
+
+export async function getSaleById(id: string) {
+	const sale = await prisma.sale.findUnique({
+		where: { id },
+		include: { items: true }
+	});
+	if (!sale) throw Errors.validation("Venda não encontrada");
+	return {
+		id: sale.id,
+		createdAt: sale.createdAt.toISOString(),
+		clientId: sale.clientId,
+		totalValue: sale.totalValue,
+		paymentType: sale.paymentType,
+		dueDate: sale.dueDate ? sale.dueDate.toISOString() : null,
+		items: sale.items.map((i) => ({ productId: i.productId, quantity: i.quantity, price: i.price }))
+	};
 }

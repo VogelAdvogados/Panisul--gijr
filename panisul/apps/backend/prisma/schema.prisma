@@ -58,3 +58,13 @@ enum StockMoveReason {
   COMPRA
   TROCA
 }
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  actorId   String
+  action    String
+  entity    String
+  entityId  String
+  details   Json?
+}
