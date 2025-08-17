@@ -5,9 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./styles.css";
 import { SalesPage } from "./modules/vendas/SalesPage";
 import { LoginPage } from "./modules/auth/LoginPage";
+import { Protected } from "./modules/_layout/Protected";
 
 const router = createBrowserRouter([
-	{ path: "/", element: <SalesPage /> },
+	{ path: "/", element: <Protected><SalesPage /></Protected> },
 	{ path: "/login", element: <LoginPage /> }
 ]);
 

@@ -1,10 +1,11 @@
 import axios from "axios";
 import { v4 as uuid } from "uuid";
+import { ENV } from "./env";
 
 const traceId = uuid();
 
 export const http = axios.create({
-	baseURL: "/api/v1",
+	baseURL: ENV.API_BASE,
 	headers: { "x-trace-id": traceId }
 });
 
