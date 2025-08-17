@@ -64,13 +64,16 @@ export function ClientsListPage() {
 				</thead>
 				<tbody>
 					{clients.map(c => (
-						<tr key={c.id} className="border-b">
+						<tr key={c.id} className="border-b hover:bg-gray-50">
 							<td className="py-2"><Link to={`/clients/${c.id}`} className="text-blue-700 underline">{c.name}</Link></td>
 							<td>{c.phone}</td>
 							<td>{c.email ?? "-"}</td>
 							<td>{new Date(c.createdAt).toLocaleString()}</td>
 						</tr>
 					))}
+					{clients.length === 0 && (
+						<tr><td colSpan={4} className="py-4 text-center text-gray-500">Nenhum cliente encontrado</td></tr>
+					)}
 				</tbody>
 			</table>
 			<div className="flex items-center gap-2">

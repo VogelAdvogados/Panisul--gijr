@@ -46,6 +46,27 @@ clientesRouter.post("/", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), asyn
 	}
 });
 
+clientesRouter.put("/:id", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const params = z.object({ id: z.string().uuid() }).parse(req.params);
+		const body = z.object({ name: z.string().min(1), phone: z.string().min(1), email: z.string().email().optional().nullable() }).parse(req.body);
+		const updated = await prisma.client.update({ where: { id: params.id }, data: { name: body.name, phone: body.phone, email: body.email ?? undefined } });
+		return res.status(200).json(makeResponse({ id: updated.id, name: updated.name, email: updated.email ?? null, phone: updated.phone, createdAt: updated.createdAt.toISOString() }, { message: "Cliente atualizado", traceId: req.traceId }));
+	} catch (err) {
+		return next(err);
+	}
+});
+
+clientesRouter.delete("/:id", authMiddleware, requireRoles("ADMIN"), async (req: Request, res: Response, next: NextFunction) => {
+	try {
+		const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+		await prisma.client.delete({ where: { id } });
+		return res.status(200).json(makeResponse({ id }, { message: "Cliente removido", traceId: req.traceId }));
+	} catch (err) {
+		return next(err);
+	}
+});
+
 clientesRouter.get("/:id", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async (req, res, next) => {
 	try {
 		const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
