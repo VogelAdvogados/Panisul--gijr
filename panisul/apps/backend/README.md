@@ -1,13 +1,14 @@
 ### Backend (@panisul/backend)
 
-- Copy `.env.example` to `.env` and adjust values
-- Run Postgres via docker compose at repo root
-- Generate Prisma client and run dev server
+- Copie `.env.example` para `.env` e ajuste valores (porta, DATABASE_URL, JWT_SECRET)
+- Gere Prisma Client, execute migrações e rode seeds
 
-Commands:
+Comandos:
 
 ```bash
 cp .env.example .env
 npm run prisma:generate
+npm run prisma:migrate
+npm run db:seed
 npm run dev
 ```
