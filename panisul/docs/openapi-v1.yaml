@@ -21,10 +21,51 @@ paths:
                   - type: object
                     properties:
                       data:
-                        type: object
-                        properties:
-                          token:
-                            type: string
+                        $ref: '#/components/schemas/AuthToken'
+  /auth/register:
+    post:
+      summary: Registrar usuário
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterUserDTO'
+      responses:
+        '201':
+          description: Usuário registrado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthToken'
+  /auth/login:
+    post:
+      summary: Login
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDTO'
+      responses:
+        '200':
+          description: Login efetuado
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AuthToken'
   /products:
     get:
       summary: Listar produtos
@@ -92,6 +133,30 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/Client'
+  /receivables:
+    get:
+      summary: Recebíveis abertos
+      tags: [Financeiro]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de recebíveis
+  /receivables/{id}/baixa:
+    post:
+      summary: Baixar (pagar) recebível
+      tags: [Financeiro]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recebível baixado
   /sales:
     post:
       summary: Registrar venda
@@ -191,6 +256,32 @@ components:
           properties:
             traceId:
               type: string
+    RegisterUserDTO:
+      type: object
+      required: [name, email, password, role]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, VENDEDOR, PRODUCAO]
+    LoginDTO:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
     CreateSaleDTO:
       type: object
       required: [clientId, items, paymentType]
