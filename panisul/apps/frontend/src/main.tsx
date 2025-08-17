@@ -8,12 +8,16 @@ import { LoginPage } from "./modules/auth/LoginPage";
 import { Protected } from "./modules/_layout/Protected";
 import { ClientsListPage } from "./modules/clientes/ClientsListPage";
 import { ClientDetailPage } from "./modules/clientes/ClientDetailPage";
+import { ExchangesPage } from "./modules/exchanges/ExchangesPage";
+import { ProductionPage } from "./modules/producao/ProductionPage";
 
 const router = createBrowserRouter([
 	{ path: "/", element: <Protected><SalesPage /></Protected> },
 	{ path: "/login", element: <LoginPage /> },
 	{ path: "/clients", element: <Protected><ClientsListPage /></Protected> },
-	{ path: "/clients/:id", element: <Protected><ClientDetailPage /></Protected> }
+	{ path: "/clients/:id", element: <Protected><ClientDetailPage /></Protected> },
+	{ path: "/exchanges", element: <Protected><ExchangesPage /></Protected> },
+	{ path: "/production", element: <Protected><ProductionPage /></Protected> }
 ]);
 
 const queryClient = new QueryClient();
