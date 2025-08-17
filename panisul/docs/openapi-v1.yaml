@@ -157,6 +157,36 @@ paths:
       responses:
         '200':
           description: Recebível baixado
+  /exchanges:
+    post:
+      summary: Registrar troca
+      tags: [Trocas]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExchangeDTO'
+      responses:
+        '201':
+          description: Troca registrada
+  /production:
+    post:
+      summary: Registrar produção
+      tags: [Produção]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductionDTO'
+      responses:
+        '201':
+          description: Produção registrada
   /sales:
     post:
       summary: Registrar venda
@@ -370,3 +400,47 @@ components:
           type: string
         phone:
           type: string
+    CreateExchangeDTO:
+      type: object
+      properties:
+        clientId:
+          type: string
+          nullable: true
+        inItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExchangeItem'
+        outItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExchangeItem'
+    ExchangeItem:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: number
+          minimum: 0
+    CreateProductionDTO:
+      type: object
+      properties:
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductionItem'
+          minItems: 1
+        consumption:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductionItem'
+    ProductionItem:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: number
+          minimum: 0

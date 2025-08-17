@@ -18,6 +18,8 @@ import { productsRouter } from "./modules/produtos/routes";
 import { fileURLToPath } from "url";
 import { clientesRouter } from "./modules/clientes/routes";
 import { recebiveisRouter } from "./modules/financeiro/recebiveis/routes";
+import { trocasRouter } from "./modules/trocas/routes";
+import { producaoRouter } from "./modules/producao/routes";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -49,6 +51,8 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/products", productsRouter);
 app.use("/api/v1/clients", clientesRouter);
 app.use("/api/v1/receivables", recebiveisRouter);
+app.use("/api/v1/exchanges", trocasRouter);
+app.use("/api/v1/production", producaoRouter);
 app.use("/api/v1/sales", vendasRouter);
 
 // Not found handler
