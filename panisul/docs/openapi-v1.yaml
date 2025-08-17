@@ -133,6 +133,70 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/Client'
+  /clients/{id}:
+    get:
+      summary: Detalhe do cliente
+      tags: [Clientes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Cliente
+  /clients/{id}/receivables:
+    get:
+      summary: Recebíveis do cliente
+      tags: [Clientes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lista de recebíveis
+  /clients/{id}/sales:
+    get:
+      summary: Histórico de compras do cliente
+      tags: [Clientes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lista de compras
+  /clients/{id}/exchanges:
+    get:
+      summary: Histórico de trocas do cliente
+      tags: [Clientes]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lista de trocas
   /receivables:
     get:
       summary: Recebíveis abertos
@@ -386,13 +450,12 @@ components:
           nullable: true
         phone:
           type: string
-          nullable: true
         createdAt:
           type: string
           format: date-time
     CreateClientDTO:
       type: object
-      required: [name]
+      required: [name, phone]
       properties:
         name:
           type: string

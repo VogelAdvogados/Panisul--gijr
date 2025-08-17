@@ -6,10 +6,14 @@ import "./styles.css";
 import { SalesPage } from "./modules/vendas/SalesPage";
 import { LoginPage } from "./modules/auth/LoginPage";
 import { Protected } from "./modules/_layout/Protected";
+import { ClientsListPage } from "./modules/clientes/ClientsListPage";
+import { ClientDetailPage } from "./modules/clientes/ClientDetailPage";
 
 const router = createBrowserRouter([
 	{ path: "/", element: <Protected><SalesPage /></Protected> },
-	{ path: "/login", element: <LoginPage /> }
+	{ path: "/login", element: <LoginPage /> },
+	{ path: "/clients", element: <Protected><ClientsListPage /></Protected> },
+	{ path: "/clients/:id", element: <Protected><ClientDetailPage /></Protected> }
 ]);
 
 const queryClient = new QueryClient();

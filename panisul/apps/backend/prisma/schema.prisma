@@ -90,7 +90,7 @@ model Client {
   id        String   @id @default(uuid())
   name      String
   email     String?
-  phone     String?
+  phone     String
   createdAt DateTime @default(now())
 }
 
@@ -101,4 +101,25 @@ model User {
   password  String
   role      String
   createdAt DateTime @default(now())
+}
+
+model Exchange {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  clientId  String?
+  items     ExchangeItem[]
+}
+
+model ExchangeItem {
+  id         String  @id @default(uuid())
+  exchangeId String
+  productId  String
+  quantity   Float
+  direction  ExchangeDirection
+  Exchange   Exchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+}
+
+enum ExchangeDirection {
+  IN
+  OUT
 }

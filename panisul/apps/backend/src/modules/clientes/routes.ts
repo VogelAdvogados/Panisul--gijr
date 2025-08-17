@@ -3,13 +3,14 @@ import { authMiddleware, requireRoles } from "../../core/auth";
 import { makeResponse } from "../../core/apiResponse";
 import { CreateClientDTO } from "@panisul/contracts/v1/clients";
 import { prisma } from "../../core/prisma";
+import { z } from "zod";
 
 export const clientesRouter = Router();
 
 clientesRouter.get("/", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async (_req: Request, res: Response, next: NextFunction) => {
 	try {
 		const list = await prisma.client.findMany({ orderBy: { createdAt: "desc" } });
-		return res.status(200).json(makeResponse(list.map(c => ({ id: c.id, name: c.name, email: c.email ?? null, phone: c.phone ?? null, createdAt: c.createdAt.toISOString() })), { message: "Clientes", traceId: res.req.traceId }));
+		return res.status(200).json(makeResponse(list.map(c => ({ id: c.id, name: c.name, email: c.email ?? null, phone: c.phone, createdAt: c.createdAt.toISOString() })), { message: "Clientes", traceId: res.req.traceId }));
 	} catch (err) {
 		return next(err);
 	}
@@ -19,7 +20,52 @@ clientesRouter.post("/", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), asyn
 	try {
 		const input = CreateClientDTO.parse(req.body);
 		const created = await prisma.client.create({ data: { name: input.name, email: input.email, phone: input.phone } });
-		return res.status(201).json(makeResponse({ id: created.id, name: created.name, email: created.email ?? null, phone: created.phone ?? null, createdAt: created.createdAt.toISOString() }, { message: "Cliente criado", traceId: req.traceId }));
+		return res.status(201).json(makeResponse({ id: created.id, name: created.name, email: created.email ?? null, phone: created.phone, createdAt: created.createdAt.toISOString() }, { message: "Cliente criado", traceId: req.traceId }));
+	} catch (err) {
+		return next(err);
+	}
+});
+
+clientesRouter.get("/:id", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async (req, res, next) => {
+	try {
+		const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+		const c = await prisma.client.findUnique({ where: { id } });
+		if (!c) return res.status(404).json(makeResponse(null, { message: "Cliente não encontrado", traceId: req.traceId, success: false }));
+		return res.status(200).json(makeResponse({ id: c.id, name: c.name, email: c.email ?? null, phone: c.phone, createdAt: c.createdAt.toISOString() }, { message: "Cliente", traceId: req.traceId }));
+	} catch (err) {
+		return next(err);
+	}
+});
+
+clientesRouter.get("/:id/receivables", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async (req, res, next) => {
+	try {
+		const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+		const list = await prisma.accountsReceivable.findMany({
+			where: { Sale: { clientId: id }, status: "OPEN" },
+			orderBy: { dueDate: "asc" },
+			include: { Sale: true }
+		});
+		return res.status(200).json(makeResponse(list.map(r => ({ id: r.id, dueDate: r.dueDate.toISOString(), amount: r.amount, status: r.status, saleId: r.saleId })), { message: "Recebíveis", traceId: req.traceId }));
+	} catch (err) {
+		return next(err);
+	}
+});
+
+clientesRouter.get("/:id/sales", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async (req, res, next) => {
+	try {
+		const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+		const sales = await prisma.sale.findMany({ where: { clientId: id }, orderBy: { createdAt: "desc" } });
+		return res.status(200).json(makeResponse(sales.map(s => ({ id: s.id, createdAt: s.createdAt.toISOString(), totalValue: s.totalValue, paymentType: s.paymentType })), { message: "Histórico de compras", traceId: req.traceId }));
+	} catch (err) {
+		return next(err);
+	}
+});
+
+clientesRouter.get("/:id/exchanges", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async (req, res, next) => {
+	try {
+		const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
+		const exchanges = await prisma.exchange.findMany({ where: { clientId: id }, orderBy: { createdAt: "desc" }, include: { items: true } });
+		return res.status(200).json(makeResponse(exchanges.map(e => ({ id: e.id, createdAt: e.createdAt.toISOString(), items: e.items })), { message: "Histórico de trocas", traceId: req.traceId }));
 	} catch (err) {
 		return next(err);
 	}

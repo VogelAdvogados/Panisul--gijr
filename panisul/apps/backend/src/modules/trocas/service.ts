@@ -16,23 +16,28 @@ export async function processExchange(input: CreateExchangeInput) {
 		// Apply moves
 		for (const item of input.outItems) {
 			await tx.product.update({ where: { id: item.productId }, data: { stockQty: { decrement: item.quantity } } });
-			await tx.stockMove.create({ data: { productId: item.productId, quantity: -Math.abs(item.quantity), reason: "TROCA" } as any });
+			await tx.stockMove.create({ data: { productId: item.productId, quantity: -Math.abs(item.quantity), reason: "TROCA" } });
 		}
 		for (const item of input.inItems) {
 			await tx.product.update({ where: { id: item.productId }, data: { stockQty: { increment: item.quantity } } });
-			await tx.stockMove.create({ data: { productId: item.productId, quantity: Math.abs(item.quantity), reason: "TROCA" } as any });
+			await tx.stockMove.create({ data: { productId: item.productId, quantity: Math.abs(item.quantity), reason: "TROCA" } });
 		}
+
+		const exchange = await tx.exchange.create({ data: { clientId: input.clientId, items: { create: [
+			...input.inItems.map(i => ({ productId: i.productId, quantity: i.quantity, direction: "IN" as const })),
+			...input.outItems.map(i => ({ productId: i.productId, quantity: i.quantity, direction: "OUT" as const })),
+		] } } });
 
 		await tx.auditLog.create({
 			data: {
 				actorId: "system",
 				action: "EXCHANGE_PROCESSED",
-				entity: "StockMove",
-				entityId: "-",
+				entity: "Exchange",
+				entityId: exchange.id,
 				details: input
 			}
 		});
 
-		return { inCount: input.inItems.length, outCount: input.outItems.length };
+		return { id: exchange.id, inCount: input.inItems.length, outCount: input.outItems.length };
 	});
 }
