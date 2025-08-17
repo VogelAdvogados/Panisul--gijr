@@ -11,7 +11,10 @@
     "dev:frontend": "npm --workspace @panisul/frontend run dev",
     "build": "npm --workspace @panisul/backend run build && npm --workspace @panisul/frontend run build",
     "start": "npm --workspace @panisul/backend run start",
-    "typecheck": "npm --workspace @panisul/backend run typecheck && npm --workspace @panisul/frontend run typecheck"
+    "typecheck": "npm --workspace @panisul/backend run typecheck && npm --workspace @panisul/frontend run typecheck",
+    "setup": "([ -f apps/backend/.env ] || cp apps/backend/.env.example apps/backend/.env 2>/dev/null || cp apps/backend/ENV.EXAMPLE apps/backend/.env) && npm run --workspace @panisul/backend prisma:generate && npm run --workspace @panisul/backend prisma:migrate && npm run --workspace @panisul/backend db:seed",
+    "setup:dev": "npm run setup && npm run dev",
+    "db:reset": "npm --workspace @panisul/backend run db:reset"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
