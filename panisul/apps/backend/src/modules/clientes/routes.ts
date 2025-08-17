@@ -4,13 +4,33 @@ import { makeResponse } from "../../core/apiResponse";
 import { CreateClientDTO } from "@panisul/contracts/v1/clients";
 import { prisma } from "../../core/prisma";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 
 export const clientesRouter = Router();
 
-clientesRouter.get("/", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async (_req: Request, res: Response, next: NextFunction) => {
+clientesRouter.get("/", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async (req: Request, res: Response, next: NextFunction) => {
 	try {
-		const list = await prisma.client.findMany({ orderBy: { createdAt: "desc" } });
-		return res.status(200).json(makeResponse(list.map(c => ({ id: c.id, name: c.name, email: c.email ?? null, phone: c.phone, createdAt: c.createdAt.toISOString() })), { message: "Clientes", traceId: res.req.traceId }));
+		const { q, page, pageSize } = z.object({
+			q: z.string().optional(),
+			page: z.coerce.number().min(1).optional().default(1),
+			pageSize: z.coerce.number().min(1).max(100).optional().default(10)
+		}).parse(req.query);
+
+		const where = q ? {
+			OR: [
+				{ name: { contains: q, mode: Prisma.QueryMode.insensitive } },
+				{ phone: { contains: q, mode: Prisma.QueryMode.insensitive } },
+				{ email: { contains: q, mode: Prisma.QueryMode.insensitive } }
+			]
+		} : {};
+
+		const [total, rows] = await Promise.all([
+			prisma.client.count({ where }),
+			prisma.client.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize })
+		]);
+		const items = rows.map(c => ({ id: c.id, name: c.name, email: c.email ?? null, phone: c.phone, createdAt: c.createdAt.toISOString() }));
+		const totalPages = Math.ceil(total / pageSize);
+		return res.status(200).json(makeResponse({ items, total, page, pageSize, totalPages }, { message: "Clientes", traceId: res.req.traceId }));
 	} catch (err) {
 		return next(err);
 	}
