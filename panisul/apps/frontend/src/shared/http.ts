@@ -8,6 +8,15 @@ export const http = axios.create({
 	headers: { "x-trace-id": traceId }
 });
 
+http.interceptors.request.use((config) => {
+	const token = localStorage.getItem("panisul_token");
+	if (token) {
+		config.headers = config.headers ?? {};
+		(config.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+	}
+	return config;
+});
+
 http.interceptors.response.use(
 	(r) => r,
 	(err) => {

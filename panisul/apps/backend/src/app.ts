@@ -25,7 +25,6 @@ app.use(attachTraceId);
 app.use(attachResponseTraceHeader);
 app.use(
 	pinoHttp({
-		logger,
 		customProps: (req) => ({ traceId: req.traceId })
 	})
 );
@@ -77,7 +76,6 @@ app.use((err: unknown, req: express.Request, res: express.Response, _next: expre
 	return res.status(500).json(
 		makeResponse(null, {
 			message: "Erro interno do servidor",
-			errors: [{ code: "VALIDACAO.CAMPO_OBRIGATORIO", message: "Erro interno do servidor" }],
 			traceId: req.traceId,
 			success: false
 		})

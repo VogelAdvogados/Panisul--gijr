@@ -37,7 +37,7 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
 export function requireRoles(...roles: UserRole[]) {
 	return (req: Request, _res: Response, next: NextFunction) => {
 		if (!req.user) return next(Errors.unauthorized());
-		if (!roles.includes(req.user.role)) return next(Errors.unauthorized("Sem permissão"));
+		if (!roles.includes(req.user.role)) return next(Errors.forbidden("Sem permissão"));
 		next();
 	};
 }

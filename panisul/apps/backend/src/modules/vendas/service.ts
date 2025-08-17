@@ -28,6 +28,18 @@ export async function createSale(input: CreateSaleInput) {
 			}
 		});
 
+		if (input.paymentType === "APRAZO") {
+			const due = input.dueDate ? new Date(input.dueDate) : new Date();
+			await tx.accountsReceivable.create({
+				data: {
+					saleId: sale.id,
+					dueDate: due,
+					amount: totalValue,
+					status: "OPEN"
+				}
+			});
+		}
+
 		await tx.auditLog.create({
 			data: {
 				actorId: "system",

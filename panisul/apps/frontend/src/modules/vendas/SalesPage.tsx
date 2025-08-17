@@ -20,19 +20,22 @@ async function ensureToken(): Promise<string> {
 }
 
 export function SalesPage() {
- const [form, setForm] = useState<FormData>({
+  const [form, setForm] = useState<FormData>({
 		clientId: "",
 		items: [{ productId: "", quantity: 1, price: 0 }],
 		paymentType: "AVISTA"
 	});
 	const [message, setMessage] = useState<string>("");
+	const [traceId, setTraceId] = useState<string>("");
+	const [errorCode, setErrorCode] = useState<string>("");
 	const [products, setProducts] = useState<Product[]>([]);
 
 	useEffect(() => {
 		(async () => {
 			const token = await ensureToken();
-			const { data } = await http.get("/products", { headers: { Authorization: `Bearer ${token}` } });
+			const { data, headers } = await http.get("/products");
 			setProducts(data?.data ?? []);
+			setTraceId(headers["x-trace-id"] ?? "");
 		})();
 	}, []);
 
@@ -52,20 +55,27 @@ export function SalesPage() {
 		});
 	}
 
+	function addItem() {
+		setForm((prev) => ({ ...prev, items: [...prev.items, { productId: "", quantity: 1, price: 0 }] }));
+	}
+
+	function removeItem(index: number) {
+		setForm((prev) => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
+	}
+
 	async function submit(ev: React.FormEvent) {
 		ev.preventDefault();
 		setMessage("");
+		setErrorCode("");
 		const parsed = SaleFormSchema.safeParse(form);
 		if (!parsed.success) {
 			setMessage(parsed.error.errors.map((e) => e.message).join(", "));
 			return;
 		}
 		try {
-			const token = await ensureToken();
-			const res = await http.post("/sales", parsed.data, {
-				headers: { Authorization: `Bearer ${token}` }
-			});
+			const res = await http.post("/sales", parsed.data);
 			setMessage(res.data.message ?? "Ok");
+			setTraceId(res.headers["x-trace-id"] ?? "");
 		} catch (e: any) {
 			if (e?.response?.status === 401) {
 				localStorage.removeItem("panisul_token");
@@ -73,6 +83,9 @@ export function SalesPage() {
 				return;
 			}
 			setMessage(e?.response?.data?.message ?? "Erro ao enviar");
+			setTraceId(e?.response?.headers?.["x-trace-id"] ?? "");
+			const code = e?.response?.data?.errors?.[0]?.code;
+			if (code) setErrorCode(code);
 		}
 	}
 
@@ -83,17 +96,21 @@ export function SalesPage() {
 				<input className="w-full border rounded p-2" placeholder="Cliente" value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })} />
 				<div className="space-y-2">
 					{form.items.map((it, idx) => (
-						<div key={idx} className="grid grid-cols-3 gap-2">
-							<select className="border rounded p-2" value={it.productId} onChange={(e) => updateItem(idx, "productId", e.target.value)}>
-								<option value="">Selecione um produto</option>
-								{products.map((p) => (
-									<option key={p.id} value={p.id}>{p.name} (est: {p.stockQty})</option>
-								))}
-							</select>
-							<input type="number" className="border rounded p-2" placeholder="Qtd" value={it.quantity} onChange={(e) => updateItem(idx, "quantity", e.target.value)} />
-							<input type="number" className="border rounded p-2" placeholder="Preço" value={it.price} onChange={(e) => updateItem(idx, "price", e.target.value)} />
+						<div key={idx} className="grid grid-cols-12 gap-2 items-center">
+							<div className="col-span-5">
+								<select className="w-full border rounded p-2" value={it.productId} onChange={(e) => updateItem(idx, "productId", e.target.value)}>
+									<option value="">Selecione um produto</option>
+									{products.map((p) => (
+										<option key={p.id} value={p.id}>{p.name} (est: {p.stockQty})</option>
+									))}
+								</select>
+							</div>
+							<input type="number" className="col-span-2 border rounded p-2" placeholder="Qtd" value={it.quantity} onChange={(e) => updateItem(idx, "quantity", e.target.value)} />
+							<input type="number" className="col-span-3 border rounded p-2" placeholder="Preço" value={it.price} onChange={(e) => updateItem(idx, "price", e.target.value)} />
+							<button type="button" className="col-span-2 bg-red-600 text-white px-2 py-2 rounded" onClick={() => removeItem(idx)}>Remover</button>
 						</div>
 					))}
+					<button type="button" className="bg-gray-200 px-3 py-1 rounded" onClick={addItem}>+ Adicionar item</button>
 				</div>
 				<div className="flex items-center gap-2">
 					<select className="border rounded p-2" value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value as any })}>
@@ -107,6 +124,8 @@ export function SalesPage() {
 				<button className="bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
 			</form>
 			{message && <p className="mt-4 text-sm text-gray-700">{message}</p>}
+			{errorCode && <p className="text-sm text-red-700">Código: {errorCode}</p>}
+			{traceId && <p className="text-xs text-gray-500">traceId: {traceId}</p>}
 		</div>
 	);
 }

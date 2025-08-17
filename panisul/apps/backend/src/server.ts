@@ -1,9 +1,10 @@
 import "dotenv/config";
 import { app } from "./app";
 import { logger } from "./core/logger";
+import { loadConfig } from "./core/config";
 
-const port = Number(process.env.PORT || 4000);
+const cfg = loadConfig();
 
-app.listen(port, () => {
-	logger.info({ port }, "Backend listening");
+app.listen(cfg.PORT, () => {
+	logger.info({ port: cfg.PORT, env: cfg.NODE_ENV }, "Backend listening");
 });

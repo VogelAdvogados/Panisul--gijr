@@ -26,6 +26,7 @@ model Sale {
   dueDate     DateTime?
   // relations
   items SaleItem[]
+  receivable AccountsReceivable?
 }
 
 model SaleItem {
@@ -67,4 +68,20 @@ model AuditLog {
   entity    String
   entityId  String
   details   Json?
+}
+
+model AccountsReceivable {
+  id        String   @id @default(uuid())
+  saleId    String   @unique
+  dueDate   DateTime
+  amount    Float
+  status    ReceivableStatus @default(OPEN)
+  createdAt DateTime @default(now())
+  Sale      Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+}
+
+enum ReceivableStatus {
+  OPEN
+  PAID
+  CANCELED
 }
