@@ -9,7 +9,8 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@contracts/*": ["apps/contracts/*"]
+      "@contracts/*": ["apps/contracts/*"],
+      "@panisul/contracts/*": ["apps/contracts/*"]
     }
   }
 }
