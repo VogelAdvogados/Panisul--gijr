@@ -15,6 +15,9 @@ import path from "path";
 import YAML from "yaml";
 import { ZodError } from "zod";
 import { productsRouter } from "./modules/produtos/routes";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const app = express();
 
@@ -30,7 +33,7 @@ app.use(
 );
 
 // Swagger UI for OpenAPI v1
-const openapiPath = path.resolve(process.cwd(), "docs/openapi-v1.yaml");
+const openapiPath = path.resolve(__dirname, "../../../docs/openapi-v1.yaml");
 const openapiDoc = YAML.parse(fs.readFileSync(openapiPath, "utf-8"));
 app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
 
