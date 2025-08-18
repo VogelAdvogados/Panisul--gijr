@@ -15,19 +15,23 @@ import path from "path";
 import YAML from "yaml";
 import { ZodError } from "zod";
 import { productsRouter } from "./modules/produtos/routes";
-import { fileURLToPath } from "url";
 import { clientesRouter } from "./modules/clientes/routes";
 import { recebiveisRouter } from "./modules/financeiro/recebiveis/routes";
 import { trocasRouter } from "./modules/trocas/routes";
 import { producaoRouter } from "./modules/producao/routes";
+import { loadConfig } from "./core/config";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const config = loadConfig();
 
 export const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: true, credentials: true }));
-app.use(express.json());
+app.use(cors({ 
+	origin: config.CORS_ORIGINS === "*" ? true : config.CORS_ORIGINS.split(","),
+	credentials: true 
+}));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(attachTraceId);
 app.use(attachResponseTraceHeader);
 app.use(
@@ -36,10 +40,16 @@ app.use(
 	})
 );
 
-// Swagger UI for OpenAPI v1
-const openapiPath = path.resolve(__dirname, "../../../docs/openapi-v1.yaml");
-const openapiDoc = YAML.parse(fs.readFileSync(openapiPath, "utf-8"));
-app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
+// Swagger UI for OpenAPI v1 - only load in non-test environment
+if (process.env.NODE_ENV !== "test") {
+	try {
+		const openapiPath = path.resolve(process.cwd(), "docs/openapi-v1.yaml");
+		const openapiDoc = YAML.parse(fs.readFileSync(openapiPath, "utf-8"));
+		app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
+	} catch (error) {
+		logger.warn("Could not load OpenAPI docs");
+	}
+}
 
 app.get("/api/v1/health", (req, res) => {
 	return res.status(200).json(

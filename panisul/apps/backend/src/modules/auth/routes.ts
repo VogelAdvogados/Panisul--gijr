@@ -10,7 +10,7 @@ import { loadConfig } from "../../core/config";
 
 export const authRouter = Router();
 
-const { JWT_SECRET } = loadConfig();
+const { JWT_SECRET, JWT_EXPIRES_IN } = loadConfig();
 
 const authLimiter = rateLimit({
 	windowMs: 15 * 60 * 1000,
@@ -31,7 +31,7 @@ const authLimiter = rateLimit({
 });
 
 function sign(user: { id: string; role: UserRole }) {
-	const token = jwt.sign(user, JWT_SECRET, { expiresIn: "7d" });
+	const token = jwt.sign(user, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as jwt.SignOptions["expiresIn"] });
 	return token;
 }
 

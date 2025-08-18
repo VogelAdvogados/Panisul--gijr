@@ -4,6 +4,7 @@ import { makeResponse } from "../../core/apiResponse";
 import { CreateClientDTO } from "@panisul/contracts/v1/clients";
 import { prisma } from "../../core/prisma";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 
 export const clientesRouter = Router();
 
@@ -15,12 +16,12 @@ clientesRouter.get("/", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async
 			pageSize: z.coerce.number().min(1).max(100).optional().default(10)
 		}).parse(req.query);
 
-		const where = q
+		const where: Prisma.ClientWhereInput = q
 			? {
 				OR: [
-					{ name: { contains: q, mode: "insensitive" } },
-					{ phone: { contains: q, mode: "insensitive" } },
-					{ email: { contains: q, mode: "insensitive" } }
+					{ name: { contains: q, mode: Prisma.QueryMode.insensitive } },
+					{ phone: { contains: q, mode: Prisma.QueryMode.insensitive } },
+					{ email: { contains: q, mode: Prisma.QueryMode.insensitive } }
 				]
 			}
 			: {};
