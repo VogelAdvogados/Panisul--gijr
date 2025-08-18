@@ -20,13 +20,17 @@ import { clientesRouter } from "./modules/clientes/routes";
 import { recebiveisRouter } from "./modules/financeiro/recebiveis/routes";
 import { trocasRouter } from "./modules/trocas/routes";
 import { producaoRouter } from "./modules/producao/routes";
+import { prisma } from "./core/prisma";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(helmet());
-app.use(cors({ origin: true, credentials: true }));
+const corsOrigin = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : true;
+app.use(cors({ origin: corsOrigin as boolean | string | RegExp | (string | RegExp)[], credentials: true }));
 app.use(express.json());
 app.use(attachTraceId);
 app.use(attachResponseTraceHeader);
@@ -45,6 +49,20 @@ app.get("/api/v1/health", (req, res) => {
 	return res.status(200).json(
 		makeResponse({ status: "ok" }, { message: "healthy", traceId: req.traceId, success: true })
 	);
+});
+
+app.get("/api/v1/ready", async (req, res) => {
+	try {
+		await prisma.$queryRaw`SELECT 1`;
+		return res.status(200).json(
+			makeResponse({ status: "ready" }, { message: "ready", traceId: req.traceId, success: true })
+		);
+	} catch (err) {
+		logger.error({ err, traceId: req.traceId }, "Readiness check failed");
+		return res.status(503).json(
+			makeResponse(null, { message: "not ready", traceId: req.traceId, success: false })
+		);
+	}
 });
 
 app.use("/api/v1/auth", authRouter);
