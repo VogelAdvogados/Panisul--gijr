@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { http, handleApiError } from "../../shared/http";
 
 export function LoginPage() {
-	const [email, setEmail] = useState("admin@panisul.local");
-	const [password, setPassword] = useState("admin123");
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
 	const [message, setMessage] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState("");
@@ -14,6 +14,18 @@ export function LoginPage() {
 		ev.preventDefault();
 		setMessage("");
 		setError("");
+
+		// Basic validation
+		if (!email.trim() || !password.trim()) {
+			setError("E-mail e senha são obrigatórios");
+			return;
+		}
+
+		if (!email.includes("@")) {
+			setError("E-mail inválido");
+			return;
+		}
+
 		setIsLoading(true);
 
 		try {
