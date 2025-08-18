@@ -5,12 +5,33 @@ import type { UserRole } from "../../core/auth";
 import { prisma } from "../../core/prisma";
 import { RegisterUserDTO, LoginDTO } from "@panisul/contracts/v1/auth";
 import bcrypt from "bcryptjs";
+import rateLimit from "express-rate-limit";
+import { loadConfig } from "../../core/config";
 
 export const authRouter = Router();
 
+const { JWT_SECRET } = loadConfig();
+
+const authLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	max: 20,
+	standardHeaders: true,
+	legacyHeaders: false,
+	handler: (req, res) => {
+		return res
+			.status(429)
+			.json(
+				makeResponse(null, {
+					message: "Muitas tentativas. Tente novamente mais tarde.",
+					success: false,
+					traceId: req.traceId
+				})
+			);
+	}
+});
+
 function sign(user: { id: string; role: UserRole }) {
-	const secret = process.env.JWT_SECRET ?? "dev-secret";
-	const token = jwt.sign(user, secret, { expiresIn: "7d" });
+	const token = jwt.sign(user, JWT_SECRET, { expiresIn: "7d" });
 	return token;
 }
 
@@ -19,7 +40,7 @@ authRouter.get("/demo", (req, res) => {
 	return res.status(200).json(makeResponse({ token }, { message: "Token de demo", traceId: req.traceId, success: true }));
 });
 
-authRouter.post("/register", async (req, res, next) => {
+authRouter.post("/register", authLimiter, async (req, res, next) => {
 	try {
 		const input = RegisterUserDTO.parse(req.body);
 		const exists = await prisma.user.findUnique({ where: { email: input.email } });
@@ -33,7 +54,7 @@ authRouter.post("/register", async (req, res, next) => {
 	}
 });
 
-authRouter.post("/login", async (req, res, next) => {
+authRouter.post("/login", authLimiter, async (req, res, next) => {
 	try {
 		const input = LoginDTO.parse(req.body);
 		const user = await prisma.user.findUnique({ where: { email: input.email } });

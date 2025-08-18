@@ -23,6 +23,15 @@ http.interceptors.response.use(
 	(err) => {
 		// eslint-disable-next-line no-console
 		console.error("API error", err?.response?.data || err.message);
+		const status = err?.response?.status;
+		if (status === 401 || status === 403) {
+			try {
+				localStorage.removeItem("panisul_token");
+			} catch {}
+			if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+				window.location.href = "/login";
+			}
+		}
 		return Promise.reject(err);
 	}
 );
