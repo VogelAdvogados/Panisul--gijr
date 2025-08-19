@@ -37,7 +37,9 @@ http.interceptors.response.use(
 		if (status === 401 || status === 403) {
 			try {
 				localStorage.removeItem("panisul_token");
-			} catch {}
+			} catch {
+				// Ignore localStorage errors
+			}
 			
 			if (typeof window !== "undefined" && window.location.pathname !== "/login") {
 				window.location.href = "/login";

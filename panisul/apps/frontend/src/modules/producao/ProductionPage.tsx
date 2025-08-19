@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { http } from "../../shared/http";
-import { z } from "zod";
 import { CreateProductionDTO } from "@panisul/contracts/v1/producao";
 
 export function ProductionPage() {
