@@ -1,9 +1,10 @@
 import { prisma } from "../../core/prisma";
 import { Errors } from "../../core/errors";
 import type { CreateExchangeInput } from "@panisul/contracts/v1/trocas";
+import type { Prisma } from "@prisma/client";
 
 export async function processExchange(input: CreateExchangeInput) {
-	return await prisma.$transaction(async (tx) => {
+	return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 		// Validate stock for outItems
 		for (const item of input.outItems) {
 			const product = await tx.product.findUnique({ where: { id: item.productId } });

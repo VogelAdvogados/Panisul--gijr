@@ -3,6 +3,8 @@ import { z } from "zod";
 export const ApiErrorCode = z.enum([
   "ESTOQUE.INSUFICIENTE",
   "VALIDACAO.CAMPO_OBRIGATORIO",
+  "VALIDACAO.QUERY_INVALIDO",
+  "VALIDACAO.PARAMS_INVALIDO",
   "AUTH.NAO_AUTORIZADO"
 ]);
 export type ApiErrorCode = z.infer<typeof ApiErrorCode>;

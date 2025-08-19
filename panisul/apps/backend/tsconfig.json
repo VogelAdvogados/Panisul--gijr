@@ -5,7 +5,7 @@
     "module": "ESNext",
     "target": "ES2021",
     "moduleResolution": "Node",
-    "types": ["node"],
+    "types": ["node", "jest"],
     "noEmit": false
   },
   "include": ["src"],

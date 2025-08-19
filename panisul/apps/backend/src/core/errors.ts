@@ -1,20 +1,22 @@
 import type { ApiErrorCode } from "@panisul/contracts/v1/common";
 
 export class AppError extends Error {
-	public readonly status: number;
-	public readonly code: ApiErrorCode;
-
-	constructor(code: ApiErrorCode, message: string, status = 400) {
+	constructor(
+		public message: string,
+		public status: number = 500,
+		public code: ApiErrorCode = "VALIDACAO.CAMPO_OBRIGATORIO"
+	) {
 		super(message);
-		this.code = code;
-		this.status = status;
-		Object.setPrototypeOf(this, new.target.prototype);
+		this.name = "AppError";
 	}
 }
 
 export const Errors = {
-	unauthorized: (message = "Não autorizado") => new AppError("AUTH.NAO_AUTORIZADO", message, 401),
-	forbidden: (message = "Sem permissão") => new AppError("AUTH.NAO_AUTORIZADO", message, 403),
-	validation: (message = "Dados inválidos") => new AppError("VALIDACAO.CAMPO_OBRIGATORIO", message, 400),
-	stockInsufficient: (message = "Estoque insuficiente") => new AppError("ESTOQUE.INSUFICIENTE", message, 422)
+	validation: (message: string) => new AppError(message, 400, "VALIDACAO.CAMPO_OBRIGATORIO"),
+	unauthorized: () => new AppError("Não autorizado", 401, "AUTH.NAO_AUTORIZADO"),
+	forbidden: (message: string) => new AppError(message, 403, "AUTH.NAO_AUTORIZADO"),
+	notFound: (message: string) => new AppError(message, 404, "VALIDACAO.CAMPO_OBRIGATORIO"),
+	stockInsufficient: (message: string) => new AppError(message, 400, "ESTOQUE.INSUFICIENTE"),
+	queryInvalid: (message: string) => new AppError(message, 400, "VALIDACAO.QUERY_INVALIDO"),
+	paramsInvalid: (message: string) => new AppError(message, 400, "VALIDACAO.PARAMS_INVALIDO")
 };

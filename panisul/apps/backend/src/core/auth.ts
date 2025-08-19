@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 import { Errors } from "./errors";
+import { loadConfig } from "./config";
 
 export type UserRole = "ADMIN" | "VENDEDOR" | "PRODUCAO";
 
@@ -25,8 +26,8 @@ export function authMiddleware(req: Request, _res: Response, next: NextFunction)
 	}
 	const token = header.slice("Bearer ".length);
 	try {
-		const secret = process.env.JWT_SECRET ?? "dev-secret";
-		const payload = jwt.verify(token, secret) as AuthUser;
+		const { JWT_SECRET } = loadConfig();
+		const payload = jwt.verify(token, JWT_SECRET) as AuthUser;
 		req.user = payload;
 		return next();
 	} catch {

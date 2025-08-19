@@ -1,9 +1,10 @@
 import { prisma } from "../../core/prisma";
 import { Errors } from "../../core/errors";
 import type { CreateSaleInput } from "@panisul/contracts/v1/vendas";
+import type { Prisma } from "@prisma/client";
 
 export async function createSale(input: CreateSaleInput) {
-	return await prisma.$transaction(async (tx) => {
+	return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
 		// Check stock first
 		for (const item of input.items) {
 			const product = await tx.product.findUnique({ where: { id: item.productId } });
@@ -92,6 +93,6 @@ export async function getSaleById(id: string) {
 		totalValue: sale.totalValue,
 		paymentType: sale.paymentType,
 		dueDate: sale.dueDate ? sale.dueDate.toISOString() : null,
-		items: sale.items.map((i) => ({ productId: i.productId, quantity: i.quantity, price: i.price }))
+		items: sale.items.map((i: { productId: string; quantity: number; price: number }) => ({ productId: i.productId, quantity: i.quantity, price: i.price }))
 	};
 }
