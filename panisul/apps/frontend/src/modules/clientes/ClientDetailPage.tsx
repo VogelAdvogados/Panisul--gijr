@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { http } from "../../shared/http";
 
@@ -22,13 +22,13 @@ export function ClientDetailPage() {
 	const [sales, setSales] = useState<Sale[]>([]);
 	const [exchanges, setExchanges] = useState<Exchange[]>([]);
 
-	async function load() {
+	const load = useCallback(async () => {
 		const { data } = await http.get(`/clients/${id}`);
 		setClient(data?.data ?? null);
 		if (data?.data) setForm({ name: data.data.name, phone: data.data.phone, email: data.data.email ?? "" });
-	}
+	}, [id]);
 
-	useEffect(() => { load(); }, [id]);
+	useEffect(() => { load(); }, [load]);
 
 	useEffect(() => {
 		if (tab === "financeiro") (async () => {

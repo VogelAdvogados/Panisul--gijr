@@ -32,7 +32,7 @@ export function SalesPage() {
 
 	useEffect(() => {
 		(async () => {
-			const token = await ensureToken();
+			await ensureToken();
 			const { data, headers } = await http.get("/products");
 			setProducts(data?.data ?? []);
 			setTraceId(headers["x-trace-id"] ?? "");

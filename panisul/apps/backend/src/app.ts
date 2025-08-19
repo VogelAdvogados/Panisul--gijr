@@ -46,7 +46,7 @@ if (process.env.NODE_ENV !== "test") {
 		const openapiPath = path.resolve(process.cwd(), "docs/openapi-v1.yaml");
 		const openapiDoc = YAML.parse(fs.readFileSync(openapiPath, "utf-8"));
 		app.use("/api/v1/docs", swaggerUi.serve, swaggerUi.setup(openapiDoc));
-	} catch (error) {
+	} catch {
 		logger.warn("Could not load OpenAPI docs");
 	}
 }
