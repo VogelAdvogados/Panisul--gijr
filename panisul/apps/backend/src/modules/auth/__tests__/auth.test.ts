@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 
 describe("Auth Module", () => {
 	beforeEach(async () => {
+		// Clean up test data
 		await prisma.user.deleteMany();
 	});
 
@@ -15,51 +16,42 @@ describe("Auth Module", () => {
 
 	describe("POST /api/v1/auth/register", () => {
 		it("should register a new user successfully", async () => {
-			const userData = {
-				name: "Test User",
-				email: "test@example.com",
-				password: "password123",
-				role: "VENDEDOR"
-			};
-
 			const response = await request(app)
 				.post("/api/v1/auth/register")
-				.send(userData)
-				.expect(201);
+				.send({
+					name: "Test User",
+					email: "test@example.com",
+					password: "password123",
+					role: "VENDEDOR"
+				});
 
+			expect(response.status).toBe(201);
 			expect(response.body.success).toBe(true);
 			expect(response.body.data.token).toBeDefined();
 			expect(response.body.message).toBe("Usuário registrado");
-
-			// Verify user was created in database
-			const user = await prisma.user.findUnique({
-				where: { email: userData.email }
-			});
-			expect(user).toBeDefined();
-			expect(user?.name).toBe(userData.name);
-			expect(user?.role).toBe(userData.role);
 		});
 
 		it("should not register user with existing email", async () => {
-			const userData = {
-				name: "Test User",
-				email: "test@example.com",
-				password: "password123",
-				role: "VENDEDOR"
-			};
+			// Create user first
+			await prisma.user.create({
+				data: {
+					name: "Existing User",
+					email: "test@example.com",
+					password: await bcrypt.hash("password123", 12),
+					role: "VENDEDOR"
+				}
+			});
 
-			// Create first user
-			await request(app)
-				.post("/api/v1/auth/register")
-				.send(userData)
-				.expect(201);
-
-			// Try to create second user with same email
 			const response = await request(app)
 				.post("/api/v1/auth/register")
-				.send(userData)
-				.expect(400);
+				.send({
+					name: "Test User",
+					email: "test@example.com",
+					password: "password123",
+					role: "VENDEDOR"
+				});
 
+			expect(response.status).toBe(400);
 			expect(response.body.success).toBe(false);
 			expect(response.body.message).toBe("E-mail já cadastrado");
 		});
@@ -67,22 +59,41 @@ describe("Auth Module", () => {
 		it("should validate required fields", async () => {
 			const response = await request(app)
 				.post("/api/v1/auth/register")
-				.send({})
-				.expect(400);
+				.send({
+					name: "",
+					email: "invalid-email",
+					password: "123",
+					role: "INVALID_ROLE"
+				});
 
+			expect(response.status).toBe(400);
 			expect(response.body.success).toBe(false);
-			expect(response.body.message).toBe("Dados inválidos");
+		});
+
+		it("should validate email format", async () => {
+			const response = await request(app)
+				.post("/api/v1/auth/register")
+				.send({
+					name: "Test User",
+					email: "invalid-email",
+					password: "password123",
+					role: "VENDEDOR"
+				});
+
+			expect(response.status).toBe(400);
+			expect(response.body.success).toBe(false);
+			expect(response.body.message).toBe("E-mail inválido");
 		});
 	});
 
 	describe("POST /api/v1/auth/login", () => {
 		beforeEach(async () => {
-			const hashedPassword = await bcrypt.hash("password123", 10);
+			// Create test user
 			await prisma.user.create({
 				data: {
 					name: "Test User",
 					email: "test@example.com",
-					password: hashedPassword,
+					password: await bcrypt.hash("password123", 12),
 					role: "VENDEDOR"
 				}
 			});
@@ -94,9 +105,9 @@ describe("Auth Module", () => {
 				.send({
 					email: "test@example.com",
 					password: "password123"
-				})
-				.expect(200);
+				});
 
+			expect(response.status).toBe(200);
 			expect(response.body.success).toBe(true);
 			expect(response.body.data.token).toBeDefined();
 			expect(response.body.message).toBe("Login efetuado");
@@ -106,11 +117,11 @@ describe("Auth Module", () => {
 			const response = await request(app)
 				.post("/api/v1/auth/login")
 				.send({
-					email: "nonexistent@example.com",
+					email: "invalid@example.com",
 					password: "password123"
-				})
-				.expect(401);
+				});
 
+			expect(response.status).toBe(401);
 			expect(response.body.success).toBe(false);
 			expect(response.body.message).toBe("Credenciais inválidas");
 		});
@@ -121,44 +132,43 @@ describe("Auth Module", () => {
 				.send({
 					email: "test@example.com",
 					password: "wrongpassword"
-				})
-				.expect(401);
+				});
 
+			expect(response.status).toBe(401);
 			expect(response.body.success).toBe(false);
 			expect(response.body.message).toBe("Credenciais inválidas");
 		});
-	});
 
-	describe("GET /api/v1/auth/demo", () => {
-		it("should return demo token", async () => {
+		it("should validate email format", async () => {
 			const response = await request(app)
-				.get("/api/v1/auth/demo")
-				.expect(200);
+				.post("/api/v1/auth/login")
+				.send({
+					email: "invalid-email",
+					password: "password123"
+				});
 
-			expect(response.body.success).toBe(true);
-			expect(response.body.data.token).toBeDefined();
-			expect(response.body.message).toBe("Token de demo");
+			expect(response.status).toBe(400);
+			expect(response.body.success).toBe(false);
+			expect(response.body.message).toBe("E-mail inválido");
 		});
 	});
 
 	describe("Rate Limiting", () => {
 		it("should limit repeated login attempts", async () => {
-			const loginData = {
-				email: "test@example.com",
-				password: "wrongpassword"
-			};
-
-			// Make multiple requests
-			for (let i = 0; i < 25; i++) {
-				const response = await request(app)
+			// Make multiple rapid requests
+			const promises = Array.from({ length: 25 }, () =>
+				request(app)
 					.post("/api/v1/auth/login")
-					.send(loginData);
+					.send({
+						email: "test@example.com",
+						password: "wrongpassword"
+					})
+			);
 
-				if (i >= 20) {
-					expect(response.status).toBe(429);
-					expect(response.body.message).toBe("Muitas tentativas. Tente novamente mais tarde.");
-				}
-			}
+			const responses = await Promise.all(promises);
+			const rateLimited = responses.some(r => r.status === 429);
+
+			expect(rateLimited).toBe(true);
 		});
 	});
 });

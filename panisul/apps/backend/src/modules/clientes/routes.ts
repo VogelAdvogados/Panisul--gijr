@@ -30,7 +30,13 @@ clientesRouter.get("/", authMiddleware, requireRoles("ADMIN", "VENDEDOR"), async
 			prisma.client.count({ where }),
 			prisma.client.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * pageSize, take: pageSize })
 		]);
-		const items = rows.map((c: any) => ({ id: c.id, name: c.name, email: c.email ?? null, phone: c.phone, createdAt: c.createdAt.toISOString() }));
+		const items = rows.map((c) => ({ 
+			id: c.id, 
+			name: c.name, 
+			email: c.email ?? null, 
+			phone: c.phone, 
+			createdAt: c.createdAt.toISOString() 
+		}));
 		const totalPages = Math.ceil(total / pageSize);
 		return res.status(200).json(makeResponse({ items, total, page, pageSize, totalPages }, { message: "Clientes", traceId: res.req.traceId }));
 	} catch (err) {
@@ -88,7 +94,13 @@ clientesRouter.get("/:id/receivables", authMiddleware, requireRoles("ADMIN", "VE
 			orderBy: { dueDate: "asc" },
 			include: { Sale: true }
 		});
-		return res.status(200).json(makeResponse(list.map((r: any) => ({ id: r.id, dueDate: r.dueDate.toISOString(), amount: r.amount, status: r.status, saleId: r.saleId })), { message: "Recebíveis", traceId: req.traceId }));
+		return res.status(200).json(makeResponse(list.map((r) => ({ 
+			id: r.id, 
+			dueDate: r.dueDate.toISOString(), 
+			amount: r.amount, 
+			status: r.status, 
+			saleId: r.saleId 
+		})), { message: "Recebíveis", traceId: req.traceId }));
 	} catch (err) {
 		return next(err);
 	}
@@ -98,7 +110,12 @@ clientesRouter.get("/:id/sales", authMiddleware, requireRoles("ADMIN", "VENDEDOR
 	try {
 		const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
 		const sales = await prisma.sale.findMany({ where: { clientId: id }, orderBy: { createdAt: "desc" } });
-		return res.status(200).json(makeResponse(sales.map((s: any) => ({ id: s.id, createdAt: s.createdAt.toISOString(), totalValue: s.totalValue, paymentType: s.paymentType })), { message: "Histórico de compras", traceId: req.traceId }));
+		return res.status(200).json(makeResponse(sales.map((s) => ({ 
+			id: s.id, 
+			createdAt: s.createdAt.toISOString(), 
+			totalValue: s.totalValue, 
+			paymentType: s.paymentType 
+		})), { message: "Histórico de compras", traceId: req.traceId }));
 	} catch (err) {
 		return next(err);
 	}
@@ -108,7 +125,11 @@ clientesRouter.get("/:id/exchanges", authMiddleware, requireRoles("ADMIN", "VEND
 	try {
 		const { id } = z.object({ id: z.string().uuid() }).parse(req.params);
 		const exchanges = await prisma.exchange.findMany({ where: { clientId: id }, orderBy: { createdAt: "desc" }, include: { items: true } });
-		return res.status(200).json(makeResponse(exchanges.map((e: any) => ({ id: e.id, createdAt: e.createdAt.toISOString(), items: e.items })), { message: "Histórico de trocas", traceId: req.traceId }));
+		return res.status(200).json(makeResponse(exchanges.map((e) => ({ 
+			id: e.id, 
+			createdAt: e.createdAt.toISOString(), 
+			items: e.items 
+		})), { message: "Histórico de trocas", traceId: req.traceId }));
 	} catch (err) {
 		return next(err);
 	}

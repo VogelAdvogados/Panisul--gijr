@@ -10,9 +10,35 @@ export const http = axios.create({
 	timeout: 10000
 });
 
+// Helper function to safely access localStorage
+function getToken(): string | null {
+	try {
+		return localStorage.getItem("panisul_token");
+	} catch (error) {
+		console.warn("Failed to access localStorage:", error);
+		return null;
+	}
+}
+
+// Helper function to safely remove token
+function removeToken(): void {
+	try {
+		localStorage.removeItem("panisul_token");
+	} catch (error) {
+		console.warn("Failed to remove token from localStorage:", error);
+	}
+}
+
+// Helper function to validate JWT token format
+function isValidToken(token: string): boolean {
+	// Basic JWT format validation (header.payload.signature)
+	const parts = token.split('.');
+	return parts.length === 3 && parts.every(part => part.length > 0);
+}
+
 http.interceptors.request.use((config) => {
-	const token = localStorage.getItem("panisul_token");
-	if (token) {
+	const token = getToken();
+	if (token && isValidToken(token)) {
 		config.headers = config.headers ?? {};
 		(config.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
 	}
@@ -35,9 +61,7 @@ http.interceptors.response.use(
 
 		// Handle authentication errors
 		if (status === 401 || status === 403) {
-			try {
-				localStorage.removeItem("panisul_token");
-			} catch {}
+			removeToken();
 			
 			if (typeof window !== "undefined" && window.location.pathname !== "/login") {
 				window.location.href = "/login";
